@@ -1,27 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../widgets/day_section.dart';
+import '../data/workout_data.dart';
 
 class DashboardScreen extends StatelessWidget {
-  final String userName = "Risang";
+  final String userName = "Risanggalih";
 
-  // Dummy data
-  final Map<String, List<Map<String, dynamic>>> workoutPlan = {
-    "Senin": [
-      {"name": "Bench Press", "sets": 4, "reps": 12},
-      {"name": "Push Up", "sets": 3, "reps": 20},
-      {"name": "Dumbbell Fly", "sets": 3, "reps": 15},
-    ],
-    "Minggu": [
-      {"name": "Pull Up", "sets": 4, "reps": 8},
-      {"name": "Deadlift", "sets": 4, "reps": 10},
-    ],
-    "Selasa": [
-      {"name": "Squat", "sets": 4, "reps": 12},
-      {"name": "Lunges", "sets": 3, "reps": 15},
-    ],
-  };
-
-  DashboardScreen({super.key});
+  const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -29,70 +14,70 @@ class DashboardScreen extends StatelessWidget {
     final yesterday = today.subtract(const Duration(days: 1));
     final tomorrow = today.add(const Duration(days: 1));
 
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final secondaryColor = Theme.of(context).colorScheme.secondary;
+
     String dayName(DateTime date) {
-      return DateFormat('EEEE', 'id_ID').format(date); // Nama hari lokal
+      return DateFormat('EEEE', 'id_ID').format(date);
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Gym Tracker"),
-        backgroundColor: Colors.blueAccent,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Nama & tanggal
-            Text("Halo, $userName 👋",
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-            Text(DateFormat("EEEE, dd MMMM yyyy", "id_ID").format(today),
-                style: const TextStyle(color: Colors.grey)),
+      backgroundColor: Theme.of(context).colorScheme.primary, // biru
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 🔹 Header Greeting
+              Text(
+                "Halo, $userName 👋",
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white, // kontras
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                DateFormat("EEEE, dd MMMM yyyy", "id_ID").format(today),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withOpacity(0.9),
+                  letterSpacing: 0.3,
+                ),
+              ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
-            // Hari ini
-            _buildSection("Hari ini: ${dayName(today)}", workoutPlan[dayName(today)] ?? []),
+              // 🔹 Section Cards
+              DaySection(
+                title: "Hari ini: ${dayName(today)}",
+                categories: workoutPlan[dayName(today)] ?? {},
+                primaryColor: primaryColor,
+                secondaryColor: secondaryColor,
+              ),
+              const SizedBox(height: 16),
 
-            const SizedBox(height: 20),
+              DaySection(
+                title: "Kemarin: ${dayName(yesterday)}",
+                categories: workoutPlan[dayName(yesterday)] ?? {},
+                primaryColor: primaryColor,
+                secondaryColor: secondaryColor,
+              ),
+              const SizedBox(height: 16),
 
-            // Kemarin
-            _buildSection("Kemarin: ${dayName(yesterday)}", workoutPlan[dayName(yesterday)] ?? []),
-
-            const SizedBox(height: 20),
-
-            // Besok
-            _buildSection("Besok: ${dayName(tomorrow)}", workoutPlan[dayName(tomorrow)] ?? []),
-          ],
+              DaySection(
+                title: "Besok: ${dayName(tomorrow)}",
+                categories: workoutPlan[dayName(tomorrow)] ?? {},
+                primaryColor: primaryColor,
+                secondaryColor: secondaryColor,
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildSection(String title, List<Map<String, dynamic>> exercises) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 10),
-          if (exercises.isEmpty)
-            const Text("Tidak ada jadwal latihan", style: TextStyle(color: Colors.grey))
-          else
-            ...exercises.map((e) => ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.fitness_center, color: Colors.blueAccent),
-                  title: Text(e["name"]),
-                  subtitle: Text("${e["sets"]} set x ${e["reps"]} reps"),
-                )),
-        ],
       ),
     );
   }

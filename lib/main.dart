@@ -1,23 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_repkeep/screens/dashboard_screen.dart';
+import 'package:flutter_repkeep/screens/workout_list.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
-void main() {
-  runApp(RepKeeps());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('id_ID', null);
+  runApp(const RepKeeps());
 }
 
 class RepKeeps extends StatelessWidget {
+  const RepKeeps({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Bottom Nav Demo',
-      home: HomeScreen(),
+      debugShowCheckedModeBanner: false,
+      title: 'RepKeeps',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF1565C0), // Primary Blue
+          primary: const Color.fromARGB(255, 86, 151, 226),
+          secondary: const Color(0xFF42A5F5), // Secondary Blue Accent
+        ),
+        useMaterial3: true,
+      ),
+      home: const HomeScreen(),
     );
   }
 }
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
@@ -25,7 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Widget> _pages = [
     DashboardScreen(),
-    Center(child: Text('Search Page')),
+    WorkoutListScreen(),
     Center(child: Text('Profile Page')),
   ];
 
@@ -46,8 +63,8 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
+            icon: Icon(Icons.list),
+            label: 'Activity',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
