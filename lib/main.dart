@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_repkeep/screens/dashboard_screen.dart';
+import 'package:flutter_repkeep/screens/test_screen.dart';
 import 'package:flutter_repkeep/screens/workout_list.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -43,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _pages = [
     DashboardScreen(),
     WorkoutListScreen(),
-    Center(child: Text('Profile Page')),
+    Test(),
   ];
 
   @override

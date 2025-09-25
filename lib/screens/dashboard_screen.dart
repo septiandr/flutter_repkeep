@@ -17,8 +17,25 @@ class DashboardScreen extends StatelessWidget {
     final primaryColor = Theme.of(context).colorScheme.primary;
     final secondaryColor = Theme.of(context).colorScheme.secondary;
 
+    final todayName = switch (today.weekday) {
+      1 => "Senin",
+      2 => "Selasa",
+      3 => "Rabu",
+      4 => "Kamis",
+      5 => "Jumat",
+      6 => "Sabtu",
+      7 => "Minggu",
+      _ => "",
+    };
+
     String dayName(DateTime date) {
       return DateFormat('EEEE', 'id_ID').format(date);
+    }
+
+    String dayWithCategory(DateTime date) {
+      final name = DateFormat('EEEE', 'id_ID').format(date);
+      final cats = workoutPlan[name] ?? {};
+      return cats.keys.isNotEmpty ? "$name - ${cats.keys.first}" : name;
     }
 
     return Scaffold(
@@ -53,27 +70,31 @@ class DashboardScreen extends StatelessWidget {
               const SizedBox(height: 24),
 
               // 🔹 Section Cards
-              DaySection(
-                title: "Hari ini: ${dayName(today)}",
-                categories: workoutPlan[dayName(today)] ?? {},
-                primaryColor: primaryColor,
-                secondaryColor: secondaryColor,
-              ),
-              const SizedBox(height: 16),
-
-              DaySection(
-                title: "Kemarin: ${dayName(yesterday)}",
-                categories: workoutPlan[dayName(yesterday)] ?? {},
-                primaryColor: primaryColor,
-                secondaryColor: secondaryColor,
-              ),
-              const SizedBox(height: 16),
-
-              DaySection(
-                title: "Besok: ${dayName(tomorrow)}",
-                categories: workoutPlan[dayName(tomorrow)] ?? {},
-                primaryColor: primaryColor,
-                secondaryColor: secondaryColor,
+              Column(
+                spacing: 10,
+                children: [
+                  DaySection(
+                    title: "Kemarin: ${dayWithCategory(yesterday)}",
+                    categories: workoutPlan[dayName(yesterday)] ?? {},
+                    primaryColor: primaryColor,
+                    secondaryColor: secondaryColor,
+                  ),
+                  DaySection(
+                    title: dayWithCategory(today),
+                    categories: workoutPlan[dayName(today)] ?? {},
+                    primaryColor: Colors.blue,
+                    secondaryColor: Colors.lightBlue,
+                    initiallyExpandedCategories: (dayName(today) == todayName)
+                        ? (workoutPlan[dayName(today)]?.keys.toList() ?? [])
+                        : [],
+                  ),
+                  DaySection(
+                    title: "Besok: ${dayWithCategory(tomorrow)}",
+                    categories: workoutPlan[dayName(tomorrow)] ?? {},
+                    primaryColor: primaryColor,
+                    secondaryColor: secondaryColor,
+                  ),
+                ],
               ),
             ],
           ),

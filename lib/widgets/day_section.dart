@@ -6,17 +6,22 @@ class DaySection extends StatelessWidget {
   final Color primaryColor;
   final Color secondaryColor;
 
+  /// kategori yang mau expanded di awal
+  final List<String> initiallyExpandedCategories;
+
   const DaySection({
     super.key,
     required this.title,
     required this.categories,
     required this.primaryColor,
     required this.secondaryColor,
+    this.initiallyExpandedCategories = const [], // default kosong
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -33,35 +38,35 @@ class DaySection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title row
+          // 🔹 Title Hari
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: secondaryColor.withOpacity(0.15),
+                  color: primaryColor.withOpacity(0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.calendar_today,
                   size: 18,
-                  color: secondaryColor,
+                  color: primaryColor,
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   title,
                   style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                     color: primaryColor,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
 
           if (categories.isEmpty)
             const Padding(
@@ -74,55 +79,88 @@ class DaySection extends StatelessWidget {
               ),
             )
           else
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: categories.entries.map((entry) {
-                String category = entry.key;
-                List<Map<String, dynamic>> exercises = entry.value;
+            Theme(
+              data: Theme.of(context).copyWith(
+                dividerColor: Colors.transparent, // 🔹 hilangkan garis
+              ),
+              child: Column(
+                children: categories.entries.map((entry) {
+                  String category = entry.key;
+                  List<Map<String, dynamic>> exercises = entry.value;
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      category,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: secondaryColor.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: ExpansionTile(
+                      initiallyExpanded:
+                          initiallyExpandedCategories.contains(category),
+                      tilePadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 4),
+                      childrenPadding: const EdgeInsets.only(
+                          left: 12, right: 12, bottom: 12),
+                      leading: Icon(
+                        Icons.category,
                         color: secondaryColor,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    ...exercises.map((e) => Container(
-                          margin: const EdgeInsets.only(bottom: 10),
+                      title: Text(
+                        category,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: secondaryColor,
+                        ),
+                      ),
+                      iconColor: secondaryColor,
+                      collapsedIconColor: Colors.grey,
+                      children: exercises.map((e) {
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
                           decoration: BoxDecoration(
-                            color: secondaryColor.withOpacity(0.08),
-                            borderRadius: BorderRadius.circular(14),
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black12.withOpacity(0.05),
+                                blurRadius: 5,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
                           ),
                           child: ListTile(
-                            dense: true,
                             contentPadding: const EdgeInsets.symmetric(
                                 vertical: 6, horizontal: 12),
                             leading: CircleAvatar(
                               backgroundColor: secondaryColor.withOpacity(0.2),
-                              child: Icon(Icons.fitness_center,
-                                  color: secondaryColor, size: 20),
+                              child: Icon(
+                                Icons.fitness_center,
+                                color: secondaryColor,
+                                size: 20,
+                              ),
                             ),
                             title: Text(
                               e["name"],
                               style: const TextStyle(
-                                  fontWeight: FontWeight.w600, fontSize: 15),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
                             ),
                             subtitle: Text(
                               "${e["sets"]} set x ${e["reps"]} reps",
-                              style: const TextStyle(fontSize: 13),
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey.shade600,
+                              ),
                             ),
                           ),
-                        )),
-                    const SizedBox(height: 10),
-                  ],
-                );
-              }).toList(),
+                        );
+                      }).toList(),
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
         ],
       ),
