@@ -1,3 +1,5 @@
+import 'package:flutter_repkeep/models/category_model.dart';
+import 'package:flutter_repkeep/models/day_model.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/excercise_model.dart';
@@ -111,5 +113,36 @@ class DatabaseHelper {
   Future<int> deleteExercise(int id) async {
     final db = await instance.database;
     return await db.delete("exercises", where: "id = ?", whereArgs: [id]);
+  }
+
+  Future<List<Day>> getAllDays() async {
+    final db = await instance.database;
+    final result = await db.query("days", orderBy: "id ASC");
+    return result
+        .map((row) => Day(id: row['id'] as int, name: row['name'] as String))
+        .toList();
+  }
+
+  Future<List<Category>> getAllCategories() async {
+    final db = await instance.database;
+    final result = await db.query("categories", orderBy: "id ASC");
+    return result
+        .map((row) =>
+            Category(id: row['id'] as int, name: row['name'] as String))
+        .toList();
+  }
+
+  Future<bool> testConnection() async {
+    try {
+      final db = await database; // pastikan ini getter database kamu
+      // Cek versi database atau query sederhana
+      final result = await db.rawQuery('SELECT 1');
+      print("[DEBUG] DB connection successful: $result");
+      return true;
+    } catch (e, stackTrace) {
+      print("[ERROR] DB connection failed: $e");
+      print(stackTrace);
+      return false;
+    }
   }
 }

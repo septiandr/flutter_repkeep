@@ -1,5 +1,4 @@
 import 'package:flutter_repkeep/models/excercise_model.dart';
-import 'package:sqflite/sqflite.dart';
 import 'database_helper.dart';
 
 class ExerciseRepository {

@@ -1,18 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_repkeep/db/database_helper.dart';
+import 'package:flutter_repkeep/providers/database_provider.dart';
 import 'package:flutter_repkeep/providers/exercise_provider.dart';
 import 'package:flutter_repkeep/providers/workout_provider.dart';
 import 'package:flutter_repkeep/screens/check_screen.dart';
 import 'package:flutter_repkeep/screens/dashboard_screen.dart';
-import 'package:flutter_repkeep/screens/test_screen.dart';
 import 'package:flutter_repkeep/screens/workout_list.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final dbHelper = DatabaseHelper.instance;
+  final db = await dbHelper.database;
+  print("Database created at: ${db.path}");
+  debugPrint("Database created at: ${db.path}");
+  final dbService = DatabaseService();
+  bool isConnected = await dbService.testConnection();
+
+  print("DB Connected? $isConnected");
+  debugPrint("DB Connected? $isConnected");
   await initializeDateFormatting('id_ID', null);
-  runApp(ChangeNotifierProvider(
-    create: (context) => ExcerciseProvider(),
+  runApp(MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (context) => ExcerciseProvider()),
+      ChangeNotifierProvider(create: (context) => WorkoutProvider()),
+    ],
     child: const RepKeeps(),
   ));
 }

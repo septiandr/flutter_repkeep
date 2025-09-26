@@ -5,10 +5,52 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../widgets/day_section.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
   final String userName = "Risanggalih";
 
-  const DashboardScreen({super.key});
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<ExcerciseProvider>(context, listen: false);
+      provider.loadExercises();
+    });
+  }
+
+  /// Fungsi ambil nama hari dalam bahasa Indonesia
+  String dayName(DateTime date) {
+    return DateFormat('EEEE', 'id_ID').format(date);
+  }
+
+  /// Filter & group exercises by category untuk 1 hari
+  Map<String, List<Exercise>> getCategoriesForDay(
+      DateTime date, List<Exercise> exercises) {
+    final filtered = exercises.where((e) => e.dayId == date.weekday).toList();
+    debugPrint("getCategoriesForDay for ${dayName(date)}: ${filtered.length}");
+
+    final Map<String, List<Exercise>> grouped = {};
+    for (var ex in filtered) {
+      final catName = "Category ${ex.categoryId}";
+      grouped.putIfAbsent(catName, () => []);
+      grouped[catName]!.add(ex);
+    }
+    return grouped;
+  }
+
+  /// Untuk title, ambil nama hari + kategori pertama
+  String dayWithCategory(DateTime date, List<Exercise> exercises) {
+    final cats = getCategoriesForDay(date, exercises);
+    final name = dayName(date);
+    return cats.keys.isNotEmpty ? "$name - ${cats.keys.first}" : name;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,41 +63,18 @@ class DashboardScreen extends StatelessWidget {
     final primaryColor = Theme.of(context).colorScheme.primary;
     final secondaryColor = Theme.of(context).colorScheme.secondary;
 
-    /// 🔹 Fungsi ambil nama hari dalam bahasa Indonesia
-    String dayName(DateTime date) {
-      return DateFormat('EEEE', 'id_ID').format(date);
-    }
-
-    /// 🔹 Filter & group exercises by category untuk 1 hari
-    Map<String, List<Exercise>> getCategoriesForDay(DateTime date) {
-      // final day = dayName(date);
-      final exercises = provider.exercises.where((e) {
-        // Cocokkan dengan nama hari (pakai id kalau DB kamu sudah fix id-day mapping)
-        return e.dayId == date.weekday;
-      }).toList();
-
-      final Map<String, List<Exercise>> grouped = {};
-      for (var ex in exercises) {
-        // sementara categoryId -> string (bisa diganti ambil dari tabel categories)
-        final catName = "Category ${ex.categoryId}";
-        grouped.putIfAbsent(catName, () => []);
-        grouped[catName]!.add(ex);
-      }
-      return grouped;
-    }
-
-    /// 🔹 Untuk title, ambil nama hari + kategori pertama
-    String dayWithCategory(DateTime date) {
-      final cats = getCategoriesForDay(date);
-      final name = dayName(date);
-      return cats.keys.isNotEmpty ? "$name - ${cats.keys.first}" : name;
-    }
-
     if (provider.isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
+
+    // Cache categories per day supaya tidak dipanggil berkali-kali
+    final yesterdayCategories =
+        getCategoriesForDay(yesterday, provider.exercises);
+    final todayCategories = getCategoriesForDay(today, provider.exercises);
+    final tomorrowCategories =
+        getCategoriesForDay(tomorrow, provider.exercises);
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.primary,
@@ -65,7 +84,7 @@ class DashboardScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 🔹 Header Greeting
+              // Header Greeting
               Text(
                 "Halo, $userName 👋",
                 style: const TextStyle(
@@ -85,29 +104,29 @@ class DashboardScreen extends StatelessWidget {
                   letterSpacing: 0.3,
                 ),
               ),
-
               const SizedBox(height: 24),
 
-              // 🔹 Section Cards
+              // Section Cards
               Column(
                 children: [
                   DaySection(
-                    title: "Kemarin: ${dayWithCategory(yesterday)}",
-                    categories: getCategoriesForDay(yesterday),
+                    title:
+                        "Kemarin: ${dayWithCategory(yesterday, provider.exercises)}",
+                    categories: yesterdayCategories,
                     primaryColor: primaryColor,
                     secondaryColor: secondaryColor,
                   ),
                   DaySection(
-                    title: dayWithCategory(today),
-                    categories: getCategoriesForDay(today),
+                    title: dayWithCategory(today, provider.exercises),
+                    categories: todayCategories,
                     primaryColor: Colors.blue,
                     secondaryColor: Colors.lightBlue,
-                    initiallyExpandedCategories:
-                        getCategoriesForDay(today).keys.toList(),
+                    initiallyExpandedCategories: todayCategories.keys.toList(),
                   ),
                   DaySection(
-                    title: "Besok: ${dayWithCategory(tomorrow)}",
-                    categories: getCategoriesForDay(tomorrow),
+                    title:
+                        "Besok: ${dayWithCategory(tomorrow, provider.exercises)}",
+                    categories: tomorrowCategories,
                     primaryColor: primaryColor,
                     secondaryColor: secondaryColor,
                   ),

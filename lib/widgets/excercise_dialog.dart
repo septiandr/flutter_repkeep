@@ -1,10 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_repkeep/models/excercise_model.dart';
 
+extension WorkoutGradeExtension on WorkoutGrade {
+  String get name {
+    switch (this) {
+      case WorkoutGrade.good:
+        return 'good';
+      case WorkoutGrade.perfect:
+        return 'perfect';
+      case WorkoutGrade.bad:
+        return 'bad';
+    }
+  }
+
+  static WorkoutGrade fromString(String value) {
+    switch (value.toLowerCase()) {
+      case 'good':
+        return WorkoutGrade.good;
+      case 'perfect':
+        return WorkoutGrade.perfect;
+      case 'bad':
+        return WorkoutGrade.bad;
+      default:
+        return WorkoutGrade.good;
+    }
+  }
+}
+
 class ExerciseDialog extends StatefulWidget {
-  final Exercise? initialExercise; // kalau null → mode tambah
+  final Exercise? initialExercise;
   final void Function(String name, int sets, int reps, int duration,
-      String note, WorkoutGrade grade) onSave;
+      String note, String grade) onSave; // grade as string
 
   const ExerciseDialog({
     super.key,
@@ -33,8 +59,8 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
       setsController.text = ex.sets.toString();
       repsController.text = ex.reps.toString();
       durationController.text = ex.duration.toString();
-      noteController.text = ex.note;
-      selectedGrade = ex.grade;
+      noteController.text = ex.note ?? '';
+      selectedGrade = WorkoutGradeExtension.fromString(ex.grade.name);
     }
   }
 
@@ -101,7 +127,7 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
               int.tryParse(repsController.text) ?? 0,
               int.tryParse(durationController.text) ?? 0,
               noteController.text,
-              selectedGrade,
+              selectedGrade.name, // pass as string for DB
             );
             Navigator.pop(context);
           },
