@@ -14,10 +14,7 @@ class ExcerciseProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    final db = await DatabaseHelper().database;
-    final data = await db.query("exercises");
-
-    _exercises = data.map((e) => Exercise.fromMap(e)).toList();
+    _exercises = await DatabaseHelper.instance.getAllExercises();
 
     _isLoading = false;
     notifyListeners();
@@ -25,22 +22,14 @@ class ExcerciseProvider with ChangeNotifier {
 
   /// 🔹 Tambah exercise ke DB + Provider
   Future<void> addExercise(Exercise exercise) async {
-    final db = await DatabaseHelper().database;
-    final id = await db.insert("exercises", exercise.toMap());
-
+    final id = await DatabaseHelper.instance.insertExercise(exercise);
     _exercises.add(exercise.copyWith(id: id));
     notifyListeners();
   }
 
   /// 🔹 Update exercise
   Future<void> updateExercise(Exercise exercise) async {
-    final db = await DatabaseHelper().database;
-    await db.update(
-      "exercises",
-      exercise.toMap(),
-      where: "id = ?",
-      whereArgs: [exercise.id],
-    );
+    await DatabaseHelper.instance.updateExercise(exercise);
 
     final index = _exercises.indexWhere((e) => e.id == exercise.id);
     if (index != -1) {
@@ -51,9 +40,7 @@ class ExcerciseProvider with ChangeNotifier {
 
   /// 🔹 Hapus exercise
   Future<void> deleteExercise(int id) async {
-    final db = await DatabaseHelper().database;
-    await db.delete("exercises", where: "id = ?", whereArgs: [id]);
-
+    await DatabaseHelper.instance.deleteExercise(id);
     _exercises.removeWhere((e) => e.id == id);
     notifyListeners();
   }

@@ -1,34 +1,28 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import '../models/excercise_model.dart';
 
 class DatabaseHelper {
-  static final DatabaseHelper _instance = DatabaseHelper._internal();
-  factory DatabaseHelper() => _instance;
-
-  DatabaseHelper._internal();
-
+  static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
+
+  DatabaseHelper._init();
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB();
-    await _seedIfEmpty(_database!); // cek isi, kalau kosong seed
+    _database = await _initDB("workout.db");
+    await _seedIfEmpty(_database!);
     return _database!;
   }
 
-  Future<Database> _initDB() async {
+  Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
-    final path = join(dbPath, "workout.db");
+    final path = join(dbPath, filePath);
 
-    return await openDatabase(
-      path,
-      version: 1,
-      onCreate: _onCreate,
-    );
+    return await openDatabase(path, version: 1, onCreate: _onCreate);
   }
 
   Future<void> _onCreate(Database db, int version) async {
-    // Table Days
     await db.execute('''
       CREATE TABLE days (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -36,7 +30,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Table Categories
     await db.execute('''
       CREATE TABLE categories (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,7 +37,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Table Exercises
     await db.execute('''
       CREATE TABLE exercises (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,13 +54,10 @@ class DatabaseHelper {
     ''');
   }
 
-  /// 🔹 Seeder hanya jalan kalau tabel kosong
+  /// Seeder (hanya jika kosong)
   Future<void> _seedIfEmpty(Database db) async {
-    // Cek days
-    final dayCount = Sqflite.firstIntValue(
-      await db.rawQuery("SELECT COUNT(*) FROM days"),
-    );
-
+    final dayCount =
+        Sqflite.firstIntValue(await db.rawQuery("SELECT COUNT(*) FROM days"));
     if (dayCount == 0) {
       final days = [
         'Senin',
@@ -84,67 +73,43 @@ class DatabaseHelper {
       }
     }
 
-    // Cek categories
     final catCount = Sqflite.firstIntValue(
-      await db.rawQuery("SELECT COUNT(*) FROM categories"),
-    );
-
+        await db.rawQuery("SELECT COUNT(*) FROM categories"));
     if (catCount == 0) {
       final categories = ['Push', 'Pull', 'Legs', 'Cardio'];
       for (var c in categories) {
         await db.insert("categories", {"name": c});
       }
     }
+  }
 
-    // Cek exercises
-    final exCount = Sqflite.firstIntValue(
-      await db.rawQuery("SELECT COUNT(*) FROM exercises"),
+  // =============================
+  // 🔹 CRUD Exercises
+  // =============================
+
+  Future<List<Exercise>> getAllExercises() async {
+    final db = await instance.database;
+    final result = await db.query("exercises");
+    return result.map((e) => Exercise.fromMap(e)).toList();
+  }
+
+  Future<int> insertExercise(Exercise exercise) async {
+    final db = await instance.database;
+    return await db.insert("exercises", exercise.toMap());
+  }
+
+  Future<int> updateExercise(Exercise exercise) async {
+    final db = await instance.database;
+    return await db.update(
+      "exercises",
+      exercise.toMap(),
+      where: "id = ?",
+      whereArgs: [exercise.id],
     );
+  }
 
-    if (exCount == 0) {
-      await db.insert("exercises", {
-        "name": "Push Up",
-        "sets": 3,
-        "reps": 15,
-        "duration": 60,
-        "grade": "good",
-        "note": "Latihan pemanasan",
-        "category_id": 1,
-        "day_id": 1,
-      });
-
-      await db.insert("exercises", {
-        "name": "Pull Up",
-        "sets": 3,
-        "reps": 10,
-        "duration": 90,
-        "grade": "perfect",
-        "note": "Kuat sekali",
-        "category_id": 2,
-        "day_id": 2,
-      });
-
-      await db.insert("exercises", {
-        "name": "Squat",
-        "sets": 4,
-        "reps": 20,
-        "duration": 120,
-        "grade": "bad",
-        "note": "Capek banget",
-        "category_id": 3,
-        "day_id": 3,
-      });
-
-      await db.insert("exercises", {
-        "name": "Running",
-        "sets": 1,
-        "reps": 1,
-        "duration": 1800,
-        "grade": "good",
-        "note": "Lari sore",
-        "category_id": 4,
-        "day_id": 6,
-      });
-    }
+  Future<int> deleteExercise(int id) async {
+    final db = await instance.database;
+    return await db.delete("exercises", where: "id = ?", whereArgs: [id]);
   }
 }

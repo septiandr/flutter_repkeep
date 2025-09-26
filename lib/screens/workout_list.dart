@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_repkeep/models/excercise_model.dart';
 import 'package:flutter_repkeep/providers/workout_provider.dart';
 import 'package:provider/provider.dart';
-import '../widgets/add_excercise_dialog.dart';
-import '../widgets/edit_exercise_dialog.dart';
+
+import '../widgets/excercise_dialog.dart';
 import '../widgets/workout_category_section.dart';
 import '../widgets/workout_day_card.dart';
 import '../widgets/workout_exercise_tile.dart';
@@ -10,34 +11,38 @@ import '../widgets/workout_exercise_tile.dart';
 class WorkoutListScreen extends StatelessWidget {
   const WorkoutListScreen({super.key});
 
-  void _editExercise(BuildContext context, String day, String category,
-      int index, Map<String, dynamic> exercise) {
+  void _editExercise(BuildContext context, Exercise exercise) {
     showDialog(
       context: context,
-      builder: (context) => EditExerciseDialog(
-        initialName: exercise["name"],
-        initialSets: exercise["sets"],
-        initialReps: exercise["reps"],
-        onSave: (name, sets, reps) {
-          context
-              .read<WorkoutProvider>()
-              .editExercise(day, category, index, name, sets, reps);
-        },
-        onDelete: () {
-          context.read<WorkoutProvider>().deleteExercise(day, category, index);
+      builder: (context) => ExerciseDialog(
+        initialExercise: exercise,
+        onSave: (name, sets, reps, duration, note, grade) {
+          final updated = exercise.copyWith(
+            name: name,
+            sets: sets,
+            reps: reps,
+            duration: duration,
+            note: note,
+            grade: grade,
+          );
+          context.read<WorkoutProvider>().editExercise(updated);
         },
       ),
     );
   }
 
-  void _addExercise(BuildContext context, String day, String category) {
+  void _addExercise(BuildContext context, int dayId, int categoryId) {
     showDialog(
       context: context,
-      builder: (context) => AddExerciseDialog(
-        onAdd: (name, sets, reps) {
-          context
-              .read<WorkoutProvider>()
-              .addExercise(day, category, name, sets, reps);
+      builder: (context) => ExerciseDialog(
+        onSave: (name, sets, reps, duration, note, grade) {
+          context.read<WorkoutProvider>().addExercise(
+                dayId,
+                categoryId,
+                name,
+                sets,
+                reps,
+              );
         },
       ),
     );
@@ -48,7 +53,16 @@ class WorkoutListScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
 
-    final workoutPlan = context.watch<WorkoutProvider>().workoutPlan;
+    final provider = context.watch<WorkoutProvider>();
+    final exercises = provider.exercises;
+
+    // 🔹 Grouping exercise by day & category
+    final grouped = <int, Map<int, List<Exercise>>>{};
+    for (var ex in exercises) {
+      grouped.putIfAbsent(ex.dayId, () => {});
+      grouped[ex.dayId]!.putIfAbsent(ex.categoryId, () => []);
+      grouped[ex.dayId]![ex.categoryId]!.add(ex);
+    }
 
     return Scaffold(
       backgroundColor: primaryColor,
@@ -65,32 +79,38 @@ class WorkoutListScreen extends StatelessWidget {
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.black87),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: workoutPlan.entries.map((dayEntry) {
-          return WorkoutDayCard(
-            day: dayEntry.key,
-            child: Column(
-              children: dayEntry.value.entries.map((categoryEntry) {
-                return WorkoutCategorySection(
-                  category: categoryEntry.key,
-                  onAdd: () =>
-                      _addExercise(context, dayEntry.key, categoryEntry.key),
-                  exercises: categoryEntry.value.asMap().entries.map((entry) {
-                    return WorkoutExerciseTile(
-                      name: entry.value["name"],
-                      sets: entry.value["sets"],
-                      reps: entry.value["reps"],
-                      onEdit: () => _editExercise(context, dayEntry.key,
-                          categoryEntry.key, entry.key, entry.value),
-                    );
-                  }).toList(),
+      body: provider.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: grouped.entries.map((dayEntry) {
+                final dayId = dayEntry.key;
+                return WorkoutDayCard(
+                  day:
+                      "Hari $dayId", // 🔹 kalau ada tabel days, bisa ganti nama dari DB
+                  child: Column(
+                    children: dayEntry.value.entries.map((categoryEntry) {
+                      final categoryId = categoryEntry.key;
+                      final categoryExercises = categoryEntry.value;
+
+                      return WorkoutCategorySection(
+                        category:
+                            "Kategori $categoryId", // 🔹 ganti dengan nama kategori kalau ada tabel categories
+                        onAdd: () => _addExercise(context, dayId, categoryId),
+                        exercises: categoryExercises.map((ex) {
+                          return WorkoutExerciseTile(
+                            name: ex.name,
+                            sets: ex.sets,
+                            reps: ex.reps,
+                            onEdit: () => _editExercise(context, ex),
+                          );
+                        }).toList(),
+                      );
+                    }).toList(),
+                  ),
                 );
               }).toList(),
             ),
-          );
-        }).toList(),
-      ),
     );
   }
 }

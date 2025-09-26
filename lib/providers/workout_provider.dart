@@ -1,42 +1,48 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_repkeep/db/database_helper.dart';
+import 'package:flutter_repkeep/models/excercise_model.dart';
 
 class WorkoutProvider with ChangeNotifier {
-  final Map<String, Map<String, List<Map<String, dynamic>>>> _workoutPlan = {
-    "Senin": {
-      "Dada": [],
-      "Punggung": [],
-    },
-    "Selasa": {
-      "Kaki": [],
-    },
-    // dst...
-  };
+  List<Exercise> _exercises = [];
+  bool _isLoading = true;
 
-  Map<String, Map<String, List<Map<String, dynamic>>>> get workoutPlan =>
-      _workoutPlan;
+  List<Exercise> get exercises => _exercises;
+  bool get isLoading => _isLoading;
 
-  void addExercise(
-      String day, String category, String name, int sets, int reps) {
-    _workoutPlan[day]![category]!.add({
-      "name": name,
-      "sets": sets,
-      "reps": reps,
-    });
+  Future<void> loadExercises() async {
+    _isLoading = true;
+    notifyListeners();
+
+    _exercises = await DatabaseHelper.instance.getAllExercises();
+
+    _isLoading = false;
     notifyListeners();
   }
 
-  void editExercise(
-      String day, String category, int index, String name, int sets, int reps) {
-    _workoutPlan[day]![category]![index] = {
-      "name": name,
-      "sets": sets,
-      "reps": reps,
-    };
-    notifyListeners();
+  Future<void> addExercise(
+      int dayId, int categoryId, String name, int sets, int reps) async {
+    final ex = Exercise(
+      id: 0,
+      name: name,
+      sets: sets,
+      reps: reps,
+      duration: 0,
+      note: "",
+      grade: WorkoutGrade.good,
+      categoryId: categoryId,
+      dayId: dayId,
+    );
+    await DatabaseHelper.instance.insertExercise(ex);
+    await loadExercises();
   }
 
-  void deleteExercise(String day, String category, int index) {
-    _workoutPlan[day]![category]!.removeAt(index);
-    notifyListeners();
+  Future<void> editExercise(Exercise exercise) async {
+    await DatabaseHelper.instance.updateExercise(exercise);
+    await loadExercises();
+  }
+
+  Future<void> deleteExercise(int id) async {
+    await DatabaseHelper.instance.deleteExercise(id);
+    await loadExercises();
   }
 }
