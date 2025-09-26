@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_repkeep/providers/workout_provider.dart';
+import 'package:flutter_repkeep/screens/check_screen.dart';
 import 'package:flutter_repkeep/screens/dashboard_screen.dart';
 import 'package:flutter_repkeep/screens/test_screen.dart';
 import 'package:flutter_repkeep/screens/workout_list.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID', null);
-  runApp(const RepKeeps());
+  runApp(ChangeNotifierProvider(
+    create: (context) => WorkoutProvider(),
+    child: const RepKeeps(),
+  ));
 }
 
 class RepKeeps extends StatelessWidget {
@@ -44,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _pages = [
     DashboardScreen(),
     WorkoutListScreen(),
-    Test(),
+    CheckScreen(),
   ];
 
   @override

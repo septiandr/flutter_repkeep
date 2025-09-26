@@ -1,21 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_repkeep/widgets/add_excercise_dialog.dart';
-import 'package:flutter_repkeep/widgets/edit_exercise_dialog.dart';
-import 'package:flutter_repkeep/widgets/workout_category_section.dart';
-import 'package:flutter_repkeep/widgets/workout_day_card.dart';
-import 'package:flutter_repkeep/widgets/workout_exercise_tile.dart';
-import '../data/workout_data.dart';
+import 'package:flutter_repkeep/providers/workout_provider.dart';
+import 'package:provider/provider.dart';
+import '../widgets/add_excercise_dialog.dart';
+import '../widgets/edit_exercise_dialog.dart';
+import '../widgets/workout_category_section.dart';
+import '../widgets/workout_day_card.dart';
+import '../widgets/workout_exercise_tile.dart';
 
-class WorkoutListScreen extends StatefulWidget {
+class WorkoutListScreen extends StatelessWidget {
   const WorkoutListScreen({super.key});
 
-  @override
-  State<WorkoutListScreen> createState() => _WorkoutListScreenState();
-}
-
-class _WorkoutListScreenState extends State<WorkoutListScreen> {
-  void _editExercise(
-      String day, String category, int index, Map<String, dynamic> exercise) {
+  void _editExercise(BuildContext context, String day, String category,
+      int index, Map<String, dynamic> exercise) {
     showDialog(
       context: context,
       builder: (context) => EditExerciseDialog(
@@ -23,35 +19,25 @@ class _WorkoutListScreenState extends State<WorkoutListScreen> {
         initialSets: exercise["sets"],
         initialReps: exercise["reps"],
         onSave: (name, sets, reps) {
-          setState(() {
-            workoutPlan[day]![category]![index] = {
-              "name": name,
-              "sets": sets,
-              "reps": reps,
-            };
-          });
+          context
+              .read<WorkoutProvider>()
+              .editExercise(day, category, index, name, sets, reps);
         },
         onDelete: () {
-          setState(() {
-            workoutPlan[day]![category]!.removeAt(index);
-          });
+          context.read<WorkoutProvider>().deleteExercise(day, category, index);
         },
       ),
     );
   }
 
-  void _addExercise(String day, String category) {
+  void _addExercise(BuildContext context, String day, String category) {
     showDialog(
       context: context,
       builder: (context) => AddExerciseDialog(
         onAdd: (name, sets, reps) {
-          setState(() {
-            workoutPlan[day]![category]!.add({
-              "name": name,
-              "sets": sets,
-              "reps": reps,
-            });
-          });
+          context
+              .read<WorkoutProvider>()
+              .addExercise(day, category, name, sets, reps);
         },
       ),
     );
@@ -61,7 +47,8 @@ class _WorkoutListScreenState extends State<WorkoutListScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
-    final secondaryColor = theme.colorScheme.secondary;
+
+    final workoutPlan = context.watch<WorkoutProvider>().workoutPlan;
 
     return Scaffold(
       backgroundColor: primaryColor,
@@ -87,13 +74,14 @@ class _WorkoutListScreenState extends State<WorkoutListScreen> {
               children: dayEntry.value.entries.map((categoryEntry) {
                 return WorkoutCategorySection(
                   category: categoryEntry.key,
-                  onAdd: () => _addExercise(dayEntry.key, categoryEntry.key),
+                  onAdd: () =>
+                      _addExercise(context, dayEntry.key, categoryEntry.key),
                   exercises: categoryEntry.value.asMap().entries.map((entry) {
                     return WorkoutExerciseTile(
                       name: entry.value["name"],
                       sets: entry.value["sets"],
                       reps: entry.value["reps"],
-                      onEdit: () => _editExercise(dayEntry.key,
+                      onEdit: () => _editExercise(context, dayEntry.key,
                           categoryEntry.key, entry.key, entry.value),
                     );
                   }).toList(),
