@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_repkeep/providers/exercise_provider.dart';
 import 'package:flutter_repkeep/providers/workout_provider.dart';
 import 'package:flutter_repkeep/screens/check_screen.dart';
 import 'package:flutter_repkeep/screens/dashboard_screen.dart';
@@ -11,7 +12,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID', null);
   runApp(ChangeNotifierProvider(
-    create: (context) => WorkoutProvider(),
+    create: (context) => ExcerciseProvider(),
     child: const RepKeeps(),
   ));
 }

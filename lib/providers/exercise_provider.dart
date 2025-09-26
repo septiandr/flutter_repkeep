@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_repkeep/models/excercise_model.dart';
 import '../db/database_helper.dart';
 
-class WorkoutProvider with ChangeNotifier {
+class ExcerciseProvider with ChangeNotifier {
   List<Exercise> _exercises = [];
   bool _isLoading = true;
 

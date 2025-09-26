@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_repkeep/models/excercise_model.dart';
 
 class DaySection extends StatelessWidget {
   final String title;
-  final Map<String, List<Map<String, dynamic>>> categories;
+  final Map<String, List<Exercise>> categories;
   final Color primaryColor;
   final Color secondaryColor;
-
-  /// kategori yang mau expanded di awal
   final List<String> initiallyExpandedCategories;
 
   const DaySection({
@@ -15,7 +14,7 @@ class DaySection extends StatelessWidget {
     required this.categories,
     required this.primaryColor,
     required this.secondaryColor,
-    this.initiallyExpandedCategories = const [], // default kosong
+    this.initiallyExpandedCategories = const [],
   });
 
   @override
@@ -81,12 +80,12 @@ class DaySection extends StatelessWidget {
           else
             Theme(
               data: Theme.of(context).copyWith(
-                dividerColor: Colors.transparent, // 🔹 hilangkan garis
+                dividerColor: Colors.transparent,
               ),
               child: Column(
                 children: categories.entries.map((entry) {
                   String category = entry.key;
-                  List<Map<String, dynamic>> exercises = entry.value;
+                  List<Exercise> exercises = entry.value;
 
                   return Container(
                     margin: const EdgeInsets.only(bottom: 12),
@@ -116,6 +115,11 @@ class DaySection extends StatelessWidget {
                       iconColor: secondaryColor,
                       collapsedIconColor: Colors.grey,
                       children: exercises.map((e) {
+                        final int duration = e.duration ?? 0;
+                        final String subtitle = duration > 0
+                            ? "Durasi: ${duration}s"
+                            : "${e.sets} set x ${e.reps} reps";
+
                         return Container(
                           margin: const EdgeInsets.only(bottom: 8),
                           decoration: BoxDecoration(
@@ -141,18 +145,40 @@ class DaySection extends StatelessWidget {
                               ),
                             ),
                             title: Text(
-                              e["name"],
+                              e.name ?? "",
                               style: const TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 15,
                               ),
                             ),
-                            subtitle: Text(
-                              "${e["sets"]} set x ${e["reps"]} reps",
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey.shade600,
-                              ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  subtitle,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                if ((e.grade ?? "").toString().isNotEmpty)
+                                  Text(
+                                    "Grade: ${e.grade}",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.blueGrey,
+                                    ),
+                                  ),
+                                if ((e.note ?? "").toString().isNotEmpty)
+                                  Text(
+                                    "Note: ${e.note}",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontStyle: FontStyle.italic,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                         );

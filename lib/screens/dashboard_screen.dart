@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_repkeep/models/excercise_model.dart';
+import 'package:flutter_repkeep/providers/exercise_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../widgets/day_section.dart';
-import '../data/workout_data.dart';
 
 class DashboardScreen extends StatelessWidget {
   final String userName = "Risanggalih";
@@ -10,6 +12,8 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<ExcerciseProvider>(context);
+
     final today = DateTime.now();
     final yesterday = today.subtract(const Duration(days: 1));
     final tomorrow = today.add(const Duration(days: 1));
@@ -17,29 +21,44 @@ class DashboardScreen extends StatelessWidget {
     final primaryColor = Theme.of(context).colorScheme.primary;
     final secondaryColor = Theme.of(context).colorScheme.secondary;
 
-    final todayName = switch (today.weekday) {
-      1 => "Senin",
-      2 => "Selasa",
-      3 => "Rabu",
-      4 => "Kamis",
-      5 => "Jumat",
-      6 => "Sabtu",
-      7 => "Minggu",
-      _ => "",
-    };
-
+    /// 🔹 Fungsi ambil nama hari dalam bahasa Indonesia
     String dayName(DateTime date) {
       return DateFormat('EEEE', 'id_ID').format(date);
     }
 
+    /// 🔹 Filter & group exercises by category untuk 1 hari
+    Map<String, List<Exercise>> getCategoriesForDay(DateTime date) {
+      // final day = dayName(date);
+      final exercises = provider.exercises.where((e) {
+        // Cocokkan dengan nama hari (pakai id kalau DB kamu sudah fix id-day mapping)
+        return e.dayId == date.weekday;
+      }).toList();
+
+      final Map<String, List<Exercise>> grouped = {};
+      for (var ex in exercises) {
+        // sementara categoryId -> string (bisa diganti ambil dari tabel categories)
+        final catName = "Category ${ex.categoryId}";
+        grouped.putIfAbsent(catName, () => []);
+        grouped[catName]!.add(ex);
+      }
+      return grouped;
+    }
+
+    /// 🔹 Untuk title, ambil nama hari + kategori pertama
     String dayWithCategory(DateTime date) {
-      final name = DateFormat('EEEE', 'id_ID').format(date);
-      final cats = workoutPlan[name] ?? {};
+      final cats = getCategoriesForDay(date);
+      final name = dayName(date);
       return cats.keys.isNotEmpty ? "$name - ${cats.keys.first}" : name;
     }
 
+    if (provider.isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.primary, // biru
+      backgroundColor: Theme.of(context).colorScheme.primary,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -52,7 +71,7 @@ class DashboardScreen extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white, // kontras
+                  color: Colors.white,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -71,26 +90,24 @@ class DashboardScreen extends StatelessWidget {
 
               // 🔹 Section Cards
               Column(
-                spacing: 10,
                 children: [
                   DaySection(
                     title: "Kemarin: ${dayWithCategory(yesterday)}",
-                    categories: workoutPlan[dayName(yesterday)] ?? {},
+                    categories: getCategoriesForDay(yesterday),
                     primaryColor: primaryColor,
                     secondaryColor: secondaryColor,
                   ),
                   DaySection(
                     title: dayWithCategory(today),
-                    categories: workoutPlan[dayName(today)] ?? {},
+                    categories: getCategoriesForDay(today),
                     primaryColor: Colors.blue,
                     secondaryColor: Colors.lightBlue,
-                    initiallyExpandedCategories: (dayName(today) == todayName)
-                        ? (workoutPlan[dayName(today)]?.keys.toList() ?? [])
-                        : [],
+                    initiallyExpandedCategories:
+                        getCategoriesForDay(today).keys.toList(),
                   ),
                   DaySection(
                     title: "Besok: ${dayWithCategory(tomorrow)}",
-                    categories: workoutPlan[dayName(tomorrow)] ?? {},
+                    categories: getCategoriesForDay(tomorrow),
                     primaryColor: primaryColor,
                     secondaryColor: secondaryColor,
                   ),
